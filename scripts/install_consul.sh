@@ -1,0 +1,1 @@
+dnf -yq install consul

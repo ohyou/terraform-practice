@@ -122,15 +122,24 @@ resource "null_resource" "manager-init" {
     destination = "/tmp/install_docker.sh"
   }
 
+  provisioner "file" {
+    source      = "./scripts/install_consul.sh"
+    destination = "/tmp/install_consul.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/config_nat.sh",
       "chmod +x /tmp/fetch_tokens.sh",
       "chmod +x /tmp/install_docker.sh",
+      "chmod +x /tmp/install_consul.sh",
       "/tmp/install_docker.sh",
       "/tmp/config_nat.sh ${module.network.lan["cidr"]} ${lookup(module.manager.instance[0], "wan")}",
+      "/tmp/install_consul.sh",
       "docker swarm init --advertise-addr ${lookup(module.manager.instance[0], "lan")}",
     ]
+
+    #"consul agent -server true -bootstrap true -advertise=${lookup(module.manager.instance[0], "lan")} -data-dir=/var/consul &",
   }
 }
 
@@ -152,12 +161,21 @@ resource "null_resource" "worker-init" {
     destination = "/tmp/install_docker.sh"
   }
 
+  provisioner "file" {
+    source      = "./scripts/install_consul.sh"
+    destination = "/tmp/install_consul.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/install_docker.sh",
+      "chmod +x /tmp/install_consul.sh",
       "/tmp/install_docker.sh",
+      "/tmp/install_consul.sh",
       "docker swarm join --token ${data.external.swarm_tokens.result.worker} ${lookup(module.manager.instance[0], "lan")}:2377",
     ]
+
+    #"consul join ${lookup(module.manager.instance[0], "lan")}",
   }
 }
 
