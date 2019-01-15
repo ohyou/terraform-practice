@@ -127,6 +127,12 @@ resource "null_resource" "manager-init" {
     destination = "/tmp/install_consul.sh"
   }
 
+  provisioner "file" {
+    content     = "${data.template_file.ingress.rendered}"
+    destination = "/tmp/docker-compose.yml"
+  }
+
+  #docker service up -c -f
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/config_nat.sh",
@@ -137,9 +143,12 @@ resource "null_resource" "manager-init" {
       "/tmp/config_nat.sh ${module.network.lan["cidr"]} ${lookup(module.manager.instance[0], "wan")}",
       "/tmp/install_consul.sh",
       "docker swarm init --advertise-addr ${lookup(module.manager.instance[0], "lan")}",
-      "echo ${data.template_file.ingress.rendered} > ./rendered.yml",
-      "docker-compose -f ${data.template_file.ingress.rendered} up",
+      "docker network create --attachable --scope swarm ingress",
+      "docker stack deploy -c /tmp/docker-compose.yml ingress",
     ]
+
+    //"echo \"${data.template_file.ingress.rendered}\" > /tmp/docker-compose.yml",
+    //"docker-compose -f /tmp/docker-compose.yml up",
   }
 }
 
