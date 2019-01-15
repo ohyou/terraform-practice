@@ -137,9 +137,17 @@ resource "null_resource" "manager-init" {
       "/tmp/config_nat.sh ${module.network.lan["cidr"]} ${lookup(module.manager.instance[0], "wan")}",
       "/tmp/install_consul.sh",
       "docker swarm init --advertise-addr ${lookup(module.manager.instance[0], "lan")}",
+      "echo ${data.template_file.ingress.rendered} > ./rendered.yml",
+      "docker-compose -f ${data.template_file.ingress.rendered} up",
     ]
+  }
+}
 
-    #"consul agent -server true -bootstrap true -advertise=${lookup(module.manager.instance[0], "lan")} -data-dir=/var/consul &",
+data "template_file" "ingress" {
+  template = "${file("./stacks/ingress/docker-compose.yml")}"
+
+  vars = {
+    wan = "${lookup(module.manager.instance[0], "wan")}"
   }
 }
 
@@ -174,8 +182,6 @@ resource "null_resource" "worker-init" {
       "/tmp/install_consul.sh",
       "docker swarm join --token ${data.external.swarm_tokens.result.worker} ${lookup(module.manager.instance[0], "lan")}:2377",
     ]
-
-    #"consul join ${lookup(module.manager.instance[0], "lan")}",
   }
 }
 
