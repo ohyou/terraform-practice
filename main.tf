@@ -129,10 +129,14 @@ resource "null_resource" "manager-init" {
 
   provisioner "file" {
     content     = "${data.template_file.ingress.rendered}"
-    destination = "/tmp/docker-compose.yml"
+    destination = "/tmp/docker-compose-ingress.yml"
   }
 
-  #docker service up -c -f
+  provisioner "file" {
+    content     = "${data.template_file.consul.rendered}"
+    destination = "/tmp/docker-compose-consul.yml"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/config_nat.sh",
@@ -143,21 +147,10 @@ resource "null_resource" "manager-init" {
       "/tmp/config_nat.sh ${module.network.lan["cidr"]} ${lookup(module.manager.instance[0], "wan")}",
       "/tmp/install_consul.sh",
       "docker swarm init --advertise-addr ${lookup(module.manager.instance[0], "lan")}",
-      "docker network rm ingress -f",
-      "docker network create --attachable --scope swarm ingress",
-      "docker stack deploy -c /tmp/docker-compose.yml ingress",
+      "docker network create --attachable --scope swarm ingress-nginx",
+      "docker stack deploy -c /tmp/docker-compose-ingress.yml ingress",
+      "docker stack deploy -c /tmp/docker-compose-consul.yml consul",
     ]
-
-    //"echo \"${data.template_file.ingress.rendered}\" > /tmp/docker-compose.yml",
-    //"docker-compose -f /tmp/docker-compose.yml up",
-  }
-}
-
-data "template_file" "ingress" {
-  template = "${file("./stacks/ingress/docker-compose.yml")}"
-
-  vars = {
-    wan = "${lookup(module.manager.instance[0], "wan")}"
   }
 }
 
@@ -192,6 +185,22 @@ resource "null_resource" "worker-init" {
       "/tmp/install_consul.sh",
       "docker swarm join --token ${data.external.swarm_tokens.result.worker} ${lookup(module.manager.instance[0], "lan")}:2377",
     ]
+  }
+}
+
+data "template_file" "ingress" {
+  template = "${file("./stacks/ingress/docker-compose.yml")}"
+
+  vars = {
+    wan = "${lookup(module.manager.instance[0], "wan")}"
+  }
+}
+
+data "template_file" "consul" {
+  template = "${file("./stacks/consul/docker-compose.yml")}"
+
+  vars = {
+    lan = "${lookup(module.manager.instance[0], "lan")}"
   }
 }
 

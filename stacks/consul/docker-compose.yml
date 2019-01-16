@@ -1,0 +1,21 @@
+version: "3.7"
+
+services:
+  node:
+    image: consul:latest
+    hostname: "consul-node"
+    command: "agent -server -bind ${lan}"
+    deploy:
+      replicas: 3
+    ports:
+      - "8300:8300"
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    networks:
+      - ingress-nginx
+
+networks:
+  ingress-nginx:
+    external: true
