@@ -3,18 +3,12 @@ version: "3.7"
 services:
   node:
     image: consul:latest
-    hostname: "consul-node"
-    command: "agent -server -join ${lan} -advertise ${wan} -bootstrap-expect 3"
+    command: "agent -server -join=node -bootstrap-expect 3 -bind $(ip a | grep $(docker network ls -q -f 'name=ingress-nginx') | grep "scope" | grep -Po '(?<=inet )[\d.]+')"
     deploy:
+      mode: replicated
       replicas: 3
-    ports:
-      - "8300:8300"
-      - "8301:8301"
-      - "8400:8400"
-      - "8500:8500"
-      - "8600:8600"
-      - "8600:8600/udp"
-    networks:
+      endpoint_mode: dnsrr
+    networks: 
       - ingress-nginx
 
 networks:

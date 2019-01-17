@@ -147,6 +147,7 @@ resource "null_resource" "manager-init" {
       "/tmp/config_nat.sh ${module.network.lan["cidr"]} ${lookup(module.manager.instance[0], "wan")}",
       "/tmp/install_consul.sh",
       "docker swarm init --advertise-addr ${lookup(module.manager.instance[0], "lan")}",
+      "docker node update --label-add 'ingress=yes' $(docker node inspect -f '{{.ID}}' self)",
       "docker network create --attachable --scope swarm ingress-nginx",
       "docker stack deploy -c /tmp/docker-compose-ingress.yml ingress",
       "docker stack deploy -c /tmp/docker-compose-consul.yml consul",
