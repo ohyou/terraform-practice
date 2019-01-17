@@ -4,7 +4,7 @@ services:
   node:
     image: consul:latest
     hostname: "consul-node"
-    command: "agent -server -join ${lan} -advertise ${wan}"
+    command: "agent -server -join ${lan} -advertise ${wan} -bootstrap-expect 3"
     deploy:
       replicas: 3
     ports:
