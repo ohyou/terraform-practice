@@ -201,6 +201,7 @@ data "template_file" "consul" {
 
   vars = {
     lan = "${lookup(module.manager.instance[0], "lan")}"
+    wan = "${lookup(module.manager.instance[0], "wan")}"
   }
 }
 
